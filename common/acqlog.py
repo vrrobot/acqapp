@@ -6,13 +6,10 @@ import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
+from common import tools
 
 isFrozen = getattr(sys, 'frozen', False)
-currDir = ''
-if isFrozen:
-    currDir = os.path.dirname(sys.executable)
-else:
-    currDir = os.path.dirname(__file__)
+currDir = tools.getFileDir()
 
 def createLogger(name):
     logger = logging.getLogger(name)

@@ -182,8 +182,9 @@ class ACProtocol(Protocol):
         else:
             logger.info((u'发送开门指令！-- {}机房').format(self.roomname))
             #globalobj.IO_ACQ_PROTOCOLS[self.roomsign].open_door(delayclosetime=10)
-            ch = f"DOOR_CTRL:{self.roomsign}"
+            ch = f"DOOR_OP:{self.roomsign}"
             self.redis_client.publish(ch, "OPEN")
+            
             lastOpTime = tools.nowTime()
             lastState = None
             if self.action == 'Enter':

@@ -3,15 +3,29 @@
 
 import os
 import sys
-sys.path.append(r"d:\dciotai\acqapp")
+
+def getFileDir():
+    filedir = None
+    if getattr(sys, 'frozen', False):
+        # The application is frozen
+        filedir = os.path.dirname(sys.executable)
+    else:
+        # The application is not frozen
+        # Change this bit to match where you store your data files:
+        filedir = os.path.dirname(__file__)
+    return filedir
+
+curdir = getFileDir()
+curdir = os.path.abspath(curdir)
+fdir = os.path.abspath(os.path.join(curdir, os.pardir))
+sys.path.append(fdir)
+
 
 from twisted.internet import reactor
-
 from common import acqlog
+from protocol import usrio, acprotocol
 
 logger = acqlog.createLogger("acqserver")
-
-from protocol import usrio, acprotocol
 
 def main():
 
