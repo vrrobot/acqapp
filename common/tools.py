@@ -8,7 +8,7 @@ import time
 import socket
 import signal
 
-import torndb
+# import torndb
 import psutil
 #import psycopg2
 
@@ -49,13 +49,13 @@ def getDatabaseInfo():
     dbPassword = ""
     with open(fileName, 'r') as configFile:
         configData = json.load(configFile)
-        configObj = u2s(configData)
-        dbType = configObj["database"]["dbtype"]
-        dbHost = configObj["database"]["host"]
-        dbPort = configObj["database"]["port"]
-        dbName = configObj["database"]["name"]
-        dbUser = configObj["database"]["user"]
-        dbPassword = configObj["database"]["password"]
+      
+        dbType = configData["database"]["dbtype"]
+        dbHost = configData["database"]["host"]
+        dbPort = configData["database"]["port"]
+        dbName = configData["database"]["name"]
+        dbUser = configData["database"]["user"]
+        dbPassword = configData["database"]["password"]
         return (dbType, dbHost, dbPort, dbName, dbUser, dbPassword)
 
 def connectDatabase():
@@ -63,10 +63,10 @@ def connectDatabase():
     conn = None
     if MYSQL:
         dhost = "%s:%d" % (host, dport)
-        conn = torndb.Connection(dhost, 
-                                 name, 
-                                 user=user, 
-                                 password=password)
+        # conn = torndb.Connection(dhost, 
+        #                          name, 
+        #                          user=user, 
+        #                          password=password)
     
     if POSTGRESQL:
         #conn = psycopg2.connect(database=name, user=user, password=password)
@@ -103,10 +103,10 @@ def hex2str(data):
 def u2s(data, coding='cp936'):
     """unicode => str"""
     if isinstance(data, dict):
-        return { u2s(key): u2s(value) for key, value in data.iteritems() }
+        return { u2s(key): u2s(value) for key, value in data.items() }
     elif isinstance(data, list):
         return [ u2s(elem) for elem in data ]
-    elif isinstance(data, unicode):
+    elif isinstance(data, str):
         return data.encode(coding)
     else:
         return data

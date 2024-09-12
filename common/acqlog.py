@@ -17,8 +17,9 @@ else:
 def createLogger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
-    ldir = os.path.abspath(currDir)
-    logFile = ldir + "/log/acqserver.log"
+    pdir = os.path.abspath(currDir)
+    pdir = os.path.abspath(os.path.join(pdir, os.pardir))
+    logFile = pdir + "/acqserver/log/acqserver.log"
 
     fh = TimedRotatingFileHandler(logFile,
                                   when = 'midnight',

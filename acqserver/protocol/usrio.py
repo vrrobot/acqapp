@@ -13,7 +13,7 @@ from twisted.internet import task
 
 import redis
 
-from common import tools, acqlog
+from common import tools
 
 
 ACQ_INPUT_STATUS_CMD  = '\x11\x02\x00\x20\x00\x04\x7A\x93'  # 查询输入状态
@@ -25,7 +25,7 @@ CLOSE_DOOR_CMD = '\x11\x05\x00\x01\x00\x00\x9E\x9A'  # 关门
 START_ALARM_CMD = '\x11\x05\x00\x00\xFF\x00\x8E\xAA'  # 开启报警器
 END_ALARM_CMD   = '\x11\x05\x00\x00\x00\x00\xCF\x5A'  # 关闭报警器
 
-logger = logging.get.Logger("acqserver.usrio")
+logger = logging.getLogger("acqserver.usrio")
 
 class IOProtocol(Protocol):
     """USR-IO模块

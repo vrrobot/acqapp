@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import tools
+from common import tools
 from peewee import *
 
 dbType, dbHost, dbPort, dbName, dbUser, dbPassword = tools.getDatabaseInfo()

@@ -1,9 +1,6 @@
 # -*- coding: utf8 -*-
 #! /usr/bin/env  2.7
 
-#Compiled at: 2024-04-23
-#Powered by dciotai
-
 """
 采集zk门禁实时验证状态
 """
@@ -16,7 +13,8 @@ from twisted.internet import task
 
 import redis
 
-from common import pgmodel, tools, config, globalobj
+from common import pgmodel, tools
+import config
 
 logger = logging.getLogger('acqserver.acprotocol')
 
