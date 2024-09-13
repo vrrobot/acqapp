@@ -13,7 +13,7 @@ from twisted.internet import task
 
 import redis
 
-from common import tools
+from common import tools, pgmodel
 
 
 ACQ_INPUT_STATUS_CMD  = b'\x11\x02\x00\x20\x00\x04\x7A\x93'  # 查询输入状态
@@ -37,7 +37,7 @@ class IOProtocol(Protocol):
         self.roomname = factory.roomname
         self.roomsign = factory.roomsign
         self.channel = None
-        self.loopAcqInputStatus = None
+        self.loopAcqInputStatus = task.LoopingCall(self.acq_input_status,)
         self.loopInterval = 2
 
         self.redis_client = None
@@ -183,32 +183,24 @@ class IOProtocol(Protocol):
     def stopAcqInputStatusLoop(self):
         """
            停止输入状态采集
-        """
-        logger.debug(u"停止输入IO采集")
-    
-        if self.loopAcqInputStatus is not None:
-            if self.loopAcqInputStatus.running:
-                self.loopAcqInputStatus.stop()
+        """    
+        if self.loopAcqInputStatus.running:
+            self.loopAcqInputStatus.stop()
+            logger.debug("停止输入IO采集")
 
     def startAcqInputStatusLoop(self):
         """
            开始输入状态采集
         """
-        if self.loopAcqInputStatus is not None:
-            if not self.loopAcqInputStatus.running:
-                self.loopAcqInputStatus.start(self.loopInterval, now=False)
-        else:
-            self.loopAcqInputStatus = task.LoopingCall(self.acq_input_status,)
+        if not self.loopAcqInputStatus.running:
             self.loopAcqInputStatus.start(self.loopInterval, now=False)
     
     def clearAcqInputStatusLoop(self):
         """
            清除已有的采集循环
         """
-        if self.loopAcqInputStatus is not None:
-            if self.loopAcqInputStatus.running:
-                self.loopAcqInputStatus.stop()
-            self.loopAcqInputStatus = None
+        if self.loopAcqInputStatus.running:
+            self.loopAcqInputStatus.stop()
 
     def open_sl_alarm(self):
         """ 
@@ -216,7 +208,8 @@ class IOProtocol(Protocol):
         """
         self.stopAcqInputStatusLoop()
         self.delay_send_cmd(START_ALARM_CMD)
-        self.startAcqInputStatusLoop()
+        if self.loopAcqInputStatus is not None:
+            self.startAcqInputStatusLoop()
         
     def close_sl_alarm(self):
         """ 
@@ -225,7 +218,8 @@ class IOProtocol(Protocol):
         #globalobj.CAN_ALARM[self.roomsign] = True
         self.stopAcqInputStatusLoop()
         self.delay_send_cmd(END_ALARM_CMD)
-        self.startAcqInputStatusLoop()
+        if self.loopAcqInputStatus is not None:
+            self.startAcqInputStatusLoop()
 
     def start_alarm(self, msg=None):
 
@@ -259,7 +253,7 @@ class IOProtocol(Protocol):
         logger.debug(u"发送指令")
         reactor.callLater(self.__class__.DELAY_CMD_TIME, self.transport.write, cmd)
 
-    def open_door(self, delayclosetime=10):
+    def open_door(self, delayclosetime=5):
         """
            开门
         """
