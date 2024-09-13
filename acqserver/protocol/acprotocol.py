@@ -125,9 +125,11 @@ class ACProtocol(Protocol):
             if self.errCountDefer is None:
                 self.errCountDefer = reactor.callLater(30.0, self.resetErrCount)
             if self.errorCounts >= 6:
-                lmsg = (u'{}机房未授权用户验证数次过多！').format(self.roomname)
-                logger.warn(lmsg)
-                globalobj.IO_ACQ_PROTOCOLS[self.roomsign].start_alarm(lmsg)
+                lmsg = f"{self.roomname}机房未授权用户验证数次过多！"
+                logger.warning(lmsg)
+                self.redis_client.set("amsg", lmsg)
+                ch = f"ALARM:{self.roomsign}"
+                self.redis_client.publish(ch, "START")
                 self.resetErrCount()
                 if self.resetDefer is not None:
                     if self.resetDefer.active():

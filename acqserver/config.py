@@ -62,20 +62,16 @@ class Config:
         #self.initAC()
 
     def init(self):
-        sql = "SELECT value FROM sys_set WHERE name=\'acq_server_port\'"
-        self.acq_server_port = int(self.db.get(sql).value)
+     
+        self.acq_server_port = int(db.SysSet.get(db.SysSet.name=='acq_server_port').value)
 
-        sql = "SELECT value FROM sys_set WHERE name=\'alarm_delay_time\'"
-        self.alarm_delay_time = int(self.db.get(sql).value)
+        self.alarm_delay_time = int(db.SysSet.get(db.SysSet.name=='alarm_delay_time').value)
 
-        sql = "SELECT value FROM sys_set WHERE name=\'fp_verify_interval\'"
-        self.fp_verify_interval = int(self.db.get(sql).value)
+        self.fp_verify_interval = int(db.SysSet.get(db.SysSet.name=='fp_verify_interval').value)
+        
+        self.aqf_status = int(db.SysSet.get(db.SysSet.name=='aqf_status').value)
 
-        sql = "SELECT value FROM sys_set WHERE name=\'aqf_status\'"
-        self.aqf_status = int(self.db.get(sql).value)
-
-        sql = "SELECT value FROM sys_set WHERE name=\'send_data_interval\'"
-        self.send_data_interval = int(self.db.get(sql).value)
+        self.send_data_interval = int(db.SysSet.get(db.SysSet.name=='send_data_interval').value)
 
         sql = "SELECT value FROM sys_set WHERE name=\'centerNumber\'"
         self.sms_center_number = self.db.get(sql).value.encode('gbk')

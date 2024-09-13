@@ -470,7 +470,13 @@ def queryone(sql):
     return results[0]
 
 def get(sql):
-    results = query(sql)
+    results = None
+    try:
+        results = query(sql)
+    except Exception as e:
+        print(e)
+    if results is None:
+        return
     if len(results) == 0:
         raise ValueError("Has no result!")
     elif len(results) > 1:

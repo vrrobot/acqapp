@@ -20,7 +20,9 @@ def createLogger(name):
 
     fh = TimedRotatingFileHandler(logFile,
                                   when = 'midnight',
-                                  backupCount = 30)
+                                  backupCount = 30,
+                                  encoding='utf-8',
+                                  )
                         
     fmt = logging.Formatter('%(asctime)s %(name)s - %(levelname)s - %(message)s', 
                             '%Y-%m-%d %H:%M:%S')

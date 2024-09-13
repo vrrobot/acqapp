@@ -17,13 +17,13 @@ from common import tools
 
 
 ACQ_INPUT_STATUS_CMD  = b'\x11\x02\x00\x20\x00\x04\x7A\x93'  # 查询输入状态
-ACQ_OUTPUT_STATUS_CMD = '\x11\x01\x00\x00\x00\x04\x3F\x59'  # 查询输出状态
+ACQ_OUTPUT_STATUS_CMD = b'\x11\x01\x00\x00\x00\x04\x3F\x59'  # 查询输出状态
 
 OPEN_DOOR_CMD  = b'\x11\x05\x00\x01\xFF\x00\xDF\x6A'  # 开门
-CLOSE_DOOR_CMD = '\x11\x05\x00\x01\x00\x00\x9E\x9A'  # 关门
+CLOSE_DOOR_CMD = b'\x11\x05\x00\x01\x00\x00\x9E\x9A'  # 关门
 
-START_ALARM_CMD = '\x11\x05\x00\x00\xFF\x00\x8E\xAA'  # 开启报警器
-END_ALARM_CMD   = '\x11\x05\x00\x00\x00\x00\xCF\x5A'  # 关闭报警器
+START_ALARM_CMD = b'\x11\x05\x00\x00\xFF\x00\x8E\xAA'  # 开启报警器
+END_ALARM_CMD   = b'\x11\x05\x00\x00\x00\x00\xCF\x5A'  # 关闭报警器
 
 logger = logging.getLogger("acqserver.usrio")
 
@@ -142,8 +142,8 @@ class IOProtocol(Protocol):
         #self.factory.removeChannel(self)
         self.channel = None
 
-        lmsg = u'%s-断开连接--[%s : %d]' % (self.roomname, self.remote_ip, self.remote_port)
-        logger.warn(lmsg)
+        lmsg= f"{self.roomname}-断开连接--[{self.remote_ip} : {self.remote_port}]"
+        logger.warning(lmsg)
 
         self.clearAcqInputStatusLoop()
 
@@ -152,27 +152,33 @@ class IOProtocol(Protocol):
             self.redis_client = redis.Redis(host='localhost', port=6379,db=0)
             self.redis_client.ping()
             self.ps = self.redis_client.pubsub()
-            ch = f"DOOR_OP:{self.roomsign}"
-            print(ch)
-            self.ps.subscribe(ch)
+            ch1 = f"DOOR_OP:{self.roomsign}"
+            ch2 = f"ALARM:{self.roomsign}"
+            self.ps.subscribe(ch1, ch2)
             logger.info("连接Redis成功！")
         except Exception as e:
             logger.error("连接Redis失败！")
 
     def monitorVerifyStatus(self):
         ld = task.LoopingCall(self.verifyStatus)
-        ld.start(0.01)
+        ld.start(0.001)
 
     def verifyStatus(self):
         msg = self.ps.get_message()
-        if msg is not None:
-            op = msg["data"]
-            print(op)
-            if op == b"OPEN":
-                print("开门")
-                self.open_door()
-                ch = f"DOOR_OP:{self.roomsign}"
-                self.redis_client.publish(ch, "NONE")
+        if msg is None:
+            return
+        
+        print(msg)
+        ch = msg["channel"].decode()
+        op = msg["data"]
+        if type(op) is bytes:
+            op = op.decode()
+            if ch == f"DOOR_OP:{self.roomsign}":
+                if op == "OPEN":
+                    self.open_door()
+            elif ch == f"ALARM:{self.roomsign}":
+                if op == "START":
+                    self.start_alarm(self.redis_client.get("amsg"))
 
     def stopAcqInputStatusLoop(self):
         """
