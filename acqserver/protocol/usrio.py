@@ -14,6 +14,7 @@ from twisted.internet import task
 import redis
 
 from common import tools, pgmodel
+import config
 
 
 ACQ_INPUT_STATUS_CMD  = b'\x11\x02\x00\x20\x00\x04\x7A\x93'  # 查询输入状态
@@ -37,7 +38,9 @@ class IOProtocol(Protocol):
         self.roomname = factory.roomname
         self.roomsign = factory.roomsign
         self.channel = None
-        self.loopAcqInputStatus = task.LoopingCall(self.acq_input_status,)
+        self.loopAcqInputStatus = None
+        self.enableAcqInputStatus = False
+        self.initLoopAcqInputStatus()
         self.loopInterval = 2
 
         self.redis_client = None
@@ -64,14 +67,19 @@ class IOProtocol(Protocol):
         sndata = ''
         for nd in ndata:
             sndata = sndata + '%02X' % nd + ' '
-        lmsg = u"{}--IO模块 {}-{}收到数据：{}".format(self.roomname, self.remote_ip, 
+        lmsg = "{}--IO模块 {}-{}收到数据：{}".format(self.roomname, self.remote_ip, 
                                                      self.remote_port, sndata)
         logger.info(lmsg)
         if not tools.isok_crc16(ndata):
-            logger.error(u"%s机房-IO模块数据校验出错！"%self.roomname)
+            logger.error("%s机房-IO模块数据校验出错！"%self.roomname)
             return
 
         cmdType = ndata[1]
+
+        if cmdType == 0x05:
+            if ndata[3] == 0x01 and ndata[4] == 0xFF:
+                logger.info("开门成功！")
+            return
 
         # 输入状态
         # 主动上报输入状态       11 42 00 20 00 08 02 0A 00 ED 29
@@ -81,52 +89,36 @@ class IOProtocol(Protocol):
                 nstatus = ndata[7]
             else:
                 nstatus = ndata[3]
+            self.input_status(nstatus)
 
-            self.hwstatus = nstatus & 0b1
-            self.dmstatus = nstatus >> 1 & 0b1
-            self.esstatus = nstatus >> 2 & 0b1
-            self.fcstatus = nstatus >> 3 & 0b1
-
-            if self.esstatus == 1:
-                lmsg = "{}机房紧急开关被触动！".format(self.roomname)
-                logger.warning(lmsg)
-                self.start_alarm(lmsg)
-
-            if self.fcstatus == 0:
-                lmsg = "{}机房红外传感器被破坏！".format(self.roomname)
-                logger.warning(lmsg)
-                self.start_alarm(lmsg)
-
-            self.redis_client.hset(self.roomsign, 'dmstatus', self.dmstatus)
-
-        
+        enter_verifying = self.redis_client.hget(self.roomsign, "ENTER_VERIFYING")
+        exit_verifying  = self.redis_client.hget(self.roomsign, "EXIT_VERIFYING")
         # 门禁不是处于正在验证的状态
-        if globalobj.ENTER_VERIFYING[self.roomsign] == False and \
-            globalobj.EXIT_VERIFYING[self.roomsign] == False:
+        if enter_verifying == "NO" and exit_verifying == "NO":
             # 门已打开状态
             if self.dmstatus == 0:
                 # 发送关门指令
-                msg = u"{}机房门没关！".format(self.roomname)
+                msg = "{}机房门没关！".format(self.roomname)
                 logger.warning(msg)
 
-                # 如果报警还没启动
-                lmsg = u"{}启动报警！".format(self.roomname)
+                # 报警
+                lmsg = "{}启动报警！".format(self.roomname)
                 self.start_alarm(msg)
                 
             # 红外检测到有人，但是安全房状态是不处于合法有人的状态
             if self.hwstatus == 1 and globalobj.AQF_STATUS[self.roomsign] != 1:
-                msg = u"{}机房有非法人员！".format(self.roomname)
-                logger.warn(msg)
+                msg = "{}机房有非法人员！".format(self.roomname)
+                logger.warning(msg)
 
-                # 如果报警还没启动
-                lmsg = u"{}启动报警！".format(self.roomname)
+                # 报警
+                lmsg = "{}启动报警！".format(self.roomname)
                 self.start_alarm(msg)
 
     def connectionMade(self):
         self.remote_ip = self.transport.getPeer().host
         self.remote_port = self.transport.getPeer().port
 
-        lmsg = u'%s-IO模块连接成功--[%s : %d]' % (self.roomname, self.remote_ip, self.remote_port)
+        lmsg = '%s-IO模块连接成功--[%s : %d]' % (self.roomname, self.remote_ip, self.remote_port)
         logger.info(lmsg)
 
         #self.factory.addChannel(self)
@@ -138,6 +130,7 @@ class IOProtocol(Protocol):
         self.clearAcqInputStatusLoop()
         self.startAcqInputStatusLoop()
         """
+
     def connectionLost(self, reason):
         #self.factory.removeChannel(self)
         self.channel = None
@@ -146,6 +139,10 @@ class IOProtocol(Protocol):
         logger.warning(lmsg)
 
         self.clearAcqInputStatusLoop()
+
+    def initLoopAcqInputStatus(self):
+        if self.enableAcqInputStatus:
+            self.loopAcqInputStatus = task.LoopingCall(self.acq_input_status,)
 
     def connectRedis(self):
         try:
@@ -168,7 +165,7 @@ class IOProtocol(Protocol):
         if msg is None:
             return
         
-        print(msg)
+        logger.debug(msg)
         ch = msg["channel"].decode()
         op = msg["data"]
         if type(op) is bytes:
@@ -184,22 +181,24 @@ class IOProtocol(Protocol):
         """
            停止输入状态采集
         """    
-        if self.loopAcqInputStatus.running:
+        if self.loopAcqInputStatus is not None and \
+            self.loopAcqInputStatus.running:
             self.loopAcqInputStatus.stop()
-            logger.debug("停止输入IO采集")
 
     def startAcqInputStatusLoop(self):
         """
            开始输入状态采集
         """
-        if not self.loopAcqInputStatus.running:
+        if self.loopAcqInputStatus is not None and \
+            not self.loopAcqInputStatus.running:
             self.loopAcqInputStatus.start(self.loopInterval, now=False)
     
     def clearAcqInputStatusLoop(self):
         """
            清除已有的采集循环
         """
-        if self.loopAcqInputStatus.running:
+        if self.loopAcqInputStatus is not None and \
+            self.loopAcqInputStatus.running:
             self.loopAcqInputStatus.stop()
 
     def open_sl_alarm(self):
@@ -223,10 +222,11 @@ class IOProtocol(Protocol):
 
     def start_alarm(self, msg=None):
 
-        if globalobj.CAN_ALARM[self.roomsign] == False:
+        can_alarm = self.redis_client.get("CAN_ALARM")
+        if can_alarm == "NO":
             return
-        else:
-            globalobj.CAN_ALARM[self.roomsign] = False
+        
+        self.redis_client.set("CAN_ALARM", "NO")
 
         mmsg = ''
         if msg is not None:
@@ -239,7 +239,7 @@ class IOProtocol(Protocol):
                 if len(globalobj.SMS_ALARM_SVR) > 0:
                     globalobj.SMS_ALARM_SVR[0].addSMS(mmsg)
             else:
-                logger.warn(u"短信报警没有开启")
+                logger.warning(u"短信报警没有开启")
 
         if config.config.is_active_slalarm:
             logger.info(u"开启声光报警！")
@@ -247,17 +247,17 @@ class IOProtocol(Protocol):
             if globalobj.IO_ACQ_PROTOCOLS['ALL'] is not None:
                 globalobj.IO_ACQ_PROTOCOLS['ALL'].start_alarm()
         else:
-            logger.warn(u"声光报警没有开启")
+            logger.warning(u"声光报警没有开启")
     
     def delay_send_cmd(self, cmd):
-        logger.debug(u"发送指令")
+        logger.debug("发送指令")
         reactor.callLater(self.__class__.DELAY_CMD_TIME, self.transport.write, cmd)
 
     def open_door(self, delayclosetime=5):
         """
            开门
         """
-        logger.info(u"开门--{}机房".format(self.roomname))
+        logger.info("开门--{}机房".format(self.roomname))
         self.stopAcqInputStatusLoop()
         self.delay_send_cmd(OPEN_DOOR_CMD)
         self.startAcqInputStatusLoop()
@@ -280,6 +280,33 @@ class IOProtocol(Protocol):
            获取开关量输入状态
         """
         self.transport.write(ACQ_INPUT_STATUS_CMD)
+
+    def input_status(self, data):
+        """
+           IO设备的输入状态
+        """
+        self.hwstatus = data & 0b1
+        self.dmstatus = data >> 1 & 0b1
+        self.esstatus = data >> 2 & 0b1
+        self.fcstatus = data >> 3 & 0b1
+
+        if self.hwstatus == 1:
+            logger.info("有人")
+
+        if self.dmstatus == 0:
+            logger.info("门打开！")
+
+        if self.esstatus == 1:
+            lmsg = "{}机房紧急开关被触动！".format(self.roomname)
+            logger.warning(lmsg)
+            self.start_alarm(lmsg)
+
+        if self.fcstatus == 0:
+            lmsg = "{}机房红外传感器被破坏！".format(self.roomname)
+            logger.warning(lmsg)
+            self.start_alarm(lmsg)
+
+        self.redis_client.hset(self.roomsign, 'dmstatus', self.dmstatus)
 
 class IOFactory(ServerFactory):
     """数据采集服务端"""

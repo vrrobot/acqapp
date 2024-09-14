@@ -65,19 +65,19 @@ class ACProtocol(Protocol):
     def connectionMade(self):
         self.remote_ip = self.transport.getPeer().host
         self.remote_port = self.transport.getPeer().port
-        lmsg = (u'{}机房门禁程序连接成功--[{}:{}]').format(self.roomname, self.remote_ip, self.remote_port)
+        lmsg = ('{}机房门禁程序连接成功--[{}:{}]').format(self.roomname, self.remote_ip, self.remote_port)
         logger.info(lmsg)
         self.factory.addChannel(self)
         if self.factory.getChannelNumbers() > 10:
             for ch in self.factory.__class__.CHANNELS:
                 ch.transport.loseConnection()
-                lmsg = (u'程序主动断开与{}机房门禁程序的连接--[{}:{}]').format(self.roomname, self.remote_ip, self.remote_port)
+                lmsg = ('程序主动断开与{}机房门禁程序的连接--[{}:{}]').format(self.roomname, self.remote_ip, self.remote_port)
                 logger.warning(lmsg)
 
     def connectionLost(self, reason):
         self.factory.removeChannel(self)
         self.channel = None
-        lmsg = (u'{}机房门禁程序断开连接--[{}:{}]').format(self.roomname, self.remote_ip, self.remote_port)
+        lmsg = ('{}机房门禁程序断开连接--[{}:{}]').format(self.roomname, self.remote_ip, self.remote_port)
         logger.warning(lmsg)
         return
     
@@ -98,7 +98,7 @@ class ACProtocol(Protocol):
         return
 
     def resetInfo(self):
-        logger.info((u'{}机房重置门禁验证状态').format(self.roomname))
+        logger.info(('{}机房重置门禁验证状态').format(self.roomname))
         self.user1 = None
         self.user2 = None
         self.ioRecorder1 = None
@@ -117,11 +117,11 @@ class ACProtocol(Protocol):
         try:
             user = pgmodel.User.get(pgmodel.User.self_id == self_id)
         except Exception as e:
-            logger.warn((u'{}用户不存在！').format(self.roomname))
+            logger.warning(('{}用户不存在！').format(self.roomname))
 
         if not user:
             self.errorCounts += 1
-            logger.error((u'{}机房未授权用户！{}').format(self.roomname, self.errorCounts))
+            logger.error(('{}机房未授权用户！{}').format(self.roomname, self.errorCounts))
             if self.errCountDefer is None:
                 self.errCountDefer = reactor.callLater(30.0, self.resetErrCount)
             if self.errorCounts >= 6:
@@ -165,42 +165,46 @@ class ACProtocol(Protocol):
         """
         last_state = user.last_state.strip()
         if self.action == 'Enter' and last_state != 'out':
-            msg = (u'{}({}) 进入{}机房违反反潜规则。').format(user.name, user.self_id, self.roomname)
+            msg = ('{}({}) 进入{}机房违反反潜规则。').format(user.name, user.self_id, self.roomname)
             logger.warning(msg)
-            pgmodel.AlarmRecord.insert(desc=msg.encode('utf8'), record_time=tools.nowTime()).execute()
+            pgmodel.AlarmRecord.insert(desc=msg, record_time=tools.nowTime()).execute()
             return False
         if self.action == 'Exit' and last_state != 'in':
-            msg = (u'{}({}) 出{}机房违反反潜规则。').format(user.name, user.self_id, self.roomname)
+            msg = ('{}({}) 出{}机房违反反潜规则。').format(user.name, user.self_id, self.roomname)
             logger.warning(msg)
-            pgmodel.AlarmRecord.insert(desc=msg.encode('utf8'), record_time=tools.nowTime()).execute()
+            pgmodel.AlarmRecord.insert(desc=msg, record_time=tools.nowTime()).execute()
             return False
         return True
 
     def verify(self):
-        if self.user1.group not in ('A', 'B') or self.user2.group not in ('A', 'B') or self.user1.group == self.user2.group:
-            msg = (u'{}机房开门用户不是搭档或未分组，开门失败！').format(self.roomname)
+        if self.user1.group not in ('A', 'B') or \
+            self.user2.group not in ('A', 'B') or \
+            self.user1.group == self.user2.group:
+            msg = ('{}机房开门用户不是搭档或未分组，开门失败！').format(self.roomname)
             logger.error(msg)
             return
         else:
-            logger.info((u'发送开门指令！-- {}机房').format(self.roomname))
+            logger.info(('发送开门指令！-- {}机房').format(self.roomname))
             #globalobj.IO_ACQ_PROTOCOLS[self.roomsign].open_door(delayclosetime=10)
             ch = f"DOOR_OP:{self.roomsign}"
             self.redis_client.publish(ch, "OPEN")
             
             lastOpTime = tools.nowTime()
             lastState = None
+            action = ""
             if self.action == 'Enter':
                 self.redis_client.hset(self.roomsign, 'ENTER_VERIFYING', 'YES')
                 self.redis_client.hset(self.roomsign, 'EXIT_VERIFYING', 'NO')
                 lastState = 'in'
+                action = "进"
                 self.aqfstatus = 1
             elif self.action == 'Exit':
                 self.redis_client.hset(self.roomsign, 'ENTER_VERIFYING', 'NO')
                 self.redis_client.hset(self.roomsign, 'EXIT_VERIFYING', 'YES')
                 lastState = 'out'
+                action = "出"
                 self.aqfstatus = 0
-            else:
-                return
+            
             self.user1.last_state = lastState
             self.user1.last_op_time = lastOpTime
             self.user2.last_state = lastState
@@ -209,11 +213,12 @@ class ACProtocol(Protocol):
             self.user2.save()
             self.ioRecorder1 = pgmodel.OutInRecord(self_id=self.user1.self_id, name=self.user1.name, partner=self.user2.name, optype=lastState, isok=1, verify_mode=self.rtData['verifyMode'], record_time=lastOpTime)
             self.ioRecorder2 = pgmodel.OutInRecord(self_id=self.user2.self_id, name=self.user2.name, partner=self.user1.name, optype=lastState, isok=1, verify_mode=self.rtData['verifyMode'], record_time=lastOpTime)
-            logger.debug(u'保存门禁操作记录！')
+            logger.debug('保存门禁操作记录！')
             self.ioRecorder1.save()
             self.ioRecorder2.save()
             globalobj.HW_STATUS[self.roomsign] = 0
-            logger.info((u'{}s后检测人是否进出{}机房').format(config.config.alarm_delay_check_secs, self.roomname))
+
+            logger.info(('{}s后检测人是否{}{}机房').format(config.config.alarm_delay_check_secs, action, self.roomname))
             reactor.callLater(config.config.alarm_delay_check_secs, self.IOCheck)
             return
 
@@ -222,7 +227,7 @@ class ACProtocol(Protocol):
         """
         msg = ''
         ok = True
-        logger.info((u'机房红外状态({})：{}').format(self.action, globalobj.HW_STATUS[self.roomsign]))
+        logger.info(('机房红外状态({})：{}').format(self.action, globalobj.HW_STATUS[self.roomsign]))
         if self.action == 'Enter':
             if globalobj.HW_STATUS[self.roomsign] == 0:
                 ok = False

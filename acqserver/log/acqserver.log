@@ -1,2 +1,65 @@
 2024-09-14 00:26:06 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 52230]
 2024-09-14 00:26:06 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 10:47:22 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 10:47:22 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 10:47:22 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 10:47:29 acqserver.usrio - INFO - 连接Redis成功！
+2024-09-14 10:47:29 acqserver.usrio - INFO - CA-IO模块连接成功--[127.0.0.1 : 65293]
+2024-09-14 10:47:59 acqserver.usrio - INFO - 开门--CA机房
+2024-09-14 10:48:04 acqserver.usrio - INFO - 关门--CA机房
+2024-09-14 10:52:32 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 65293]
+2024-09-14 10:52:32 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 10:52:36 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 10:52:36 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 10:52:36 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 10:52:44 acqserver.usrio - INFO - 连接Redis成功！
+2024-09-14 10:52:44 acqserver.usrio - INFO - CA-IO模块连接成功--[127.0.0.1 : 65460]
+2024-09-14 10:52:52 acqserver.usrio - INFO - 开门--CA机房
+2024-09-14 10:52:57 acqserver.usrio - INFO - 关门--CA机房
+2024-09-14 10:53:37 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 65460]
+2024-09-14 10:53:37 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 10:55:01 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 10:55:01 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 10:55:01 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 10:55:09 acqserver.usrio - INFO - 连接Redis成功！
+2024-09-14 10:55:09 acqserver.usrio - INFO - CA-IO模块连接成功--[127.0.0.1 : 49215]
+2024-09-14 10:55:10 acqserver.usrio - INFO - 开门--CA机房
+2024-09-14 10:55:15 acqserver.usrio - INFO - 关门--CA机房
+2024-09-14 10:57:26 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 49215]
+2024-09-14 10:57:26 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 11:22:39 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 11:22:39 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 11:22:39 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 11:22:50 acqserver.usrio - INFO - 连接Redis成功！
+2024-09-14 11:22:50 acqserver.usrio - INFO - CA-IO模块连接成功--[127.0.0.1 : 50338]
+2024-09-14 11:22:55 acqserver.usrio - INFO - 开门--CA机房
+2024-09-14 11:23:00 acqserver.usrio - INFO - 关门--CA机房
+2024-09-14 11:41:11 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 50338]
+2024-09-14 11:41:11 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 11:41:16 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 11:41:16 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 11:41:16 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 11:41:26 acqserver.usrio - INFO - 连接Redis成功！
+2024-09-14 11:41:26 acqserver.usrio - INFO - CA-IO模块连接成功--[127.0.0.1 : 51039]
+2024-09-14 11:41:30 acqserver.usrio - INFO - 开门--CA机房
+2024-09-14 11:41:35 acqserver.usrio - INFO - 关门--CA机房
+2024-09-14 16:34:01 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 51039]
+2024-09-14 16:34:01 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 16:36:10 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 16:36:10 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 16:36:10 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 16:36:13 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 16:36:15 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 16:36:15 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 16:36:15 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 16:36:21 acqserver.usrio - INFO - 连接Redis成功！
+2024-09-14 16:36:21 acqserver.usrio - INFO - CA-IO模块连接成功--[127.0.0.1 : 50453]
+2024-09-14 16:36:24 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 50453]
+2024-09-14 16:36:24 acqserver - INFO - 关闭安全房管理系统！
+2024-09-14 16:38:05 acqserver.usrio - INFO - IO采集服务开始运行！-- CA机房
+2024-09-14 16:38:05 acqserver.acprotocol - INFO - CA机房门禁采集服务开始运行！
+2024-09-14 16:38:05 acqserver - INFO - 安全房管理系统开始运行！
+2024-09-14 16:38:11 acqserver.usrio - INFO - 连接Redis成功！
+2024-09-14 16:38:11 acqserver.usrio - INFO - CA-IO模块连接成功--[127.0.0.1 : 50517]
+2024-09-14 16:38:13 acqserver.usrio - WARNING - CA-断开连接--[127.0.0.1 : 50517]
+2024-09-14 16:38:13 acqserver - INFO - 关闭安全房管理系统！
